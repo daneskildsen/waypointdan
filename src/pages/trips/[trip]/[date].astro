@@ -1,54 +1,114 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { getCollection, render } from 'astro:content';
+import { Marked } from 'marked';
 import fs from 'node:fs';
+import path from 'node:path';
+
+const DAILY_DIR = 'data/timeline/daily/';
+const LOGSEQ_DIR = 'data/logseq/';
 
 export async function getStaticPaths() {
-  const entries = await getCollection('diary');
-  return entries.map((entry) => ({
-    params: {
-      trip: entry.data.trip,
-      date: entry.data.date,
-    },
-    props: { entry },
-  }));
+  const files = fs.readdirSync('data/timeline/daily/');
+  const datePattern = /^timeline-(\d{8})\.json$/;
+  const params = [];
+  for (const f of files) {
+    const match = f.match(datePattern);
+    if (match) {
+      params.push({ params: { trip: 'brisbane2026', date: match[1] } });
+    }
+  }
+  return params;
 }
 
-const { entry } = Astro.props;
-const { Content } = await render(entry);
-const { title, date, location_name, weather_temp, images } = entry.data;
-
+const { date, trip } = Astro.params;
 const y = date.slice(0, 4);
 const m = date.slice(4, 6);
 const d = date.slice(6, 8);
 const formattedDate = `${y}-${m}-${d}`;
 
+const allDates = fs.readdirSync(DAILY_DIR)
+  .map((f) => f.match(/^timeline-(\d{8})\.json$/))
+  .filter(Boolean)
+  .map((m) => m[1])
+  .sort();
+const currentIndex = allDates.indexOf(date);
+const prevDate = currentIndex > 0 ? allDates[currentIndex - 1] : null;
+const nextDate = currentIndex < allDates.length - 1 ? allDates[currentIndex + 1] : null;
+
+const tripTag = trip.replace(/(\d+)$/, ' $1').replace(/([a-z])([A-Z])/g, '$1 $2');
+
 const allEntries = await getCollection('diary');
-const sorted = allEntries.sort((a, b) => a.data.date.localeCompare(b.data.date));
-const currentIndex = sorted.findIndex((e) => e.id === entry.id);
-const prev = sorted[currentIndex - 1] ?? null;
-const next = sorted[currentIndex + 1] ?? null;
+const entry = allEntries.find((e) => e.data.trip === trip && e.data.date === date);
+let Content = null;
+let title = formattedDate;
+let location_name = '';
+let weather_temp = null;
+let images = [];
+if (entry) {
+  const result = await render(entry);
+  Content = result.Content;
+  title = entry.data.title;
+  location_name = entry.data.location_name;
+  weather_temp = entry.data.weather_temp;
+  images = entry.data.images ?? [];
+}
 
-const tripTag = entry.data.trip.replace(/(\d+)$/, ' $1').replace(/([a-z])([A-Z])/g, '$1 $2');
-
-const timelinePath = `/home/daneskildsen/projects/waypointdan/data/timeline/daily/timeline-${date}.json`;
+const timelinePath = path.join(DAILY_DIR, `timeline-${date}.json`);
 let coords = [];
+let weatherMetrics = { maxTemp: null, minTemp: null, precipitation: null, weatherCode: null };
 try {
   const raw = fs.readFileSync(timelinePath, 'utf-8');
   const data = JSON.parse(raw);
   const segments = data.semanticSegments ?? [];
   for (const seg of segments) {
-    const path = seg.timelinePath ?? [];
-    for (const pt of path) {
+    const segPath = seg.timelinePath ?? [];
+    for (const pt of segPath) {
       const p = pt.point ?? '';
-      const match = p.match(/([\d.-]+)°\s*,\s*([\d.-]+)°/);
-      if (match) {
-        coords.push([parseFloat(match[1]), parseFloat(match[2])]);
+      const coordMatch = p.match(/([\d.-]+)°\s*,\s*([\d.-]+)°/);
+      if (coordMatch) {
+        coords.push([parseFloat(coordMatch[1]), parseFloat(coordMatch[2])]);
       }
     }
   }
+  const wm = data.weatherMetrics ?? {};
+  weatherMetrics = {
+    maxTemp: wm.maxTemp ?? null,
+    minTemp: wm.minTemp ?? null,
+    precipitation: wm.precipitation ?? null,
+    weatherCode: wm.weatherCode ?? null,
+  };
 } catch {
   // timeline file not found or parse error — coords stays empty
+}
+
+function weatherLabel(code) {
+  if (code === null || code === undefined) return { icon: 'help', label: '--' };
+  if (code === 0) return { icon: 'wb_sunny', label: 'Sunny' };
+  if (code >= 1 && code <= 3) return { icon: 'partly_cloudy_day', label: 'Partly Cloudy' };
+  if (code >= 51 && code <= 57) return { icon: 'rainy_light', label: 'Drizzle' };
+  if (code >= 61 && code <= 65) return { icon: 'rainy', label: 'Rain' };
+  if (code >= 71 && code <= 77) return { icon: 'weather_snowy', label: 'Snow' };
+  if (code >= 80 && code <= 82) return { icon: 'rainy', label: 'Rain Showers' };
+  if (code >= 95 && code <= 99) return { icon: 'thunderstorm', label: 'Thunderstorm' };
+  return { icon: 'help', label: `Code ${code}` };
+}
+
+const w = weatherLabel(weatherMetrics.weatherCode);
+
+const logseqFilename = `${y}_${m}_${d}.md`;
+const logseqPath = path.join(LOGSEQ_DIR, logseqFilename);
+let hasLogseq = false;
+let logseqHtml = '';
+try {
+  if (fs.existsSync(logseqPath)) {
+    const raw = fs.readFileSync(logseqPath, 'utf-8');
+    const marked = new Marked();
+    logseqHtml = marked.parse(raw);
+    hasLogseq = true;
+  }
+} catch {
+  // logseq file read or parse error — hasLogseq stays false
 }
 ---
 
@@ -69,9 +129,9 @@ try {
     <div class="flex items-center gap-4">
       <button class="material-symbols-outlined p-2 hover:bg-surface-container-low transition-colors rounded-full">light_mode</button>
       <div class="flex items-center gap-2 text-primary font-bold">
-        <a href={prev ? `/trips/${prev.data.trip}/${prev.data.date}/` : '#'} class="material-symbols-outlined cursor-pointer hover:bg-surface-container-low rounded-full p-1 transition-colors" aria-label="Previous entry">chevron_left</a>
+        <a href={prevDate ? `/trips/${trip}/${prevDate}/` : '#'} class="material-symbols-outlined cursor-pointer hover:bg-surface-container-low rounded-full p-1 transition-colors" aria-label="Previous entry">chevron_left</a>
         <a href="/trips/" class="material-symbols-outlined cursor-pointer hover:bg-surface-container-low rounded-full p-1 transition-colors" aria-label="All trips">event</a>
-        <a href={next ? `/trips/${next.data.trip}/${next.data.date}/` : '#'} class="material-symbols-outlined cursor-pointer hover:bg-surface-container-low rounded-full p-1 transition-colors" aria-label="Next entry">chevron_right</a>
+        <a href={nextDate ? `/trips/${trip}/${nextDate}/` : '#'} class="material-symbols-outlined cursor-pointer hover:bg-surface-container-low rounded-full p-1 transition-colors" aria-label="Next entry">chevron_right</a>
       </div>
     </div>
   </header>
@@ -88,11 +148,20 @@ try {
           <h1 class="font-display-lg text-display-lg text-primary mb-2">{title}</h1>
           <p class="font-label-sm text-on-surface-variant uppercase tracking-widest">{formattedDate} &bull; {location_name}</p>
         </div>
+        {hasLogseq ? (
         <div class="space-y-stack-lg">
-          <div class="diary-line pl-8 prose">
-            <Content />
+          <div class="diary-line pl-8 prose" set:html={logseqHtml}></div>
+        </div>
+        ) : (
+        <div class="space-y-stack-lg">
+          <div class="diary-line pl-8">
+            <div class="bg-surface-container-low rounded-xl border border-dashed border-outline-variant p-8 text-center">
+              <span class="material-symbols-outlined text-4xl text-on-surface-variant mb-3">edit_note</span>
+              <p class="font-body-lg text-on-surface-variant">Add a logseq entry for <span class="font-semibold text-primary">{formattedDate}</span></p>
+            </div>
           </div>
         </div>
+        )}
       </div>
     </section>
 
@@ -120,40 +189,44 @@ try {
         <h2 class="font-headline-md text-headline-md text-primary mb-6">Daily Weather</h2>
         <div class="bg-surface-container-low rounded-xl border border-outline-variant p-6 flex flex-wrap items-center gap-8 md:gap-16">
           <div class="flex items-center gap-4">
-            <span class="material-symbols-outlined text-4xl text-primary">wb_sunny</span>
+            <span class="material-symbols-outlined text-4xl text-primary">{w.icon}</span>
             <div>
-              <p class="font-headline-md text-primary">Mostly Sunny</p>
+              <p class="font-headline-md text-primary">{w.label}</p>
               <p class="font-label-sm text-on-surface-variant">{location_name}</p>
             </div>
           </div>
           <div class="flex flex-col gap-1">
-            <p class="font-label-sm text-on-surface-variant uppercase tracking-widest">Temperature</p>
-            <p class="font-body-lg text-primary font-semibold">{weather_temp}&deg;C</p>
+            <p class="font-label-sm text-on-surface-variant uppercase tracking-widest">Max Temp</p>
+            <p class="font-body-lg text-primary font-semibold">{weatherMetrics.maxTemp !== null ? `${weatherMetrics.maxTemp}°C` : '--'}</p>
           </div>
           <div class="flex flex-col gap-1">
-            <p class="font-label-sm text-on-surface-variant uppercase tracking-widest">Date</p>
-            <p class="font-body-lg text-primary font-semibold">{formattedDate}</p>
+            <p class="font-label-sm text-on-surface-variant uppercase tracking-widest">Min Temp</p>
+            <p class="font-body-lg text-primary font-semibold">{weatherMetrics.minTemp !== null ? `${weatherMetrics.minTemp}°C` : '--'}</p>
+          </div>
+          <div class="flex flex-col gap-1">
+            <p class="font-label-sm text-on-surface-variant uppercase tracking-widest">Rain</p>
+            <p class="font-body-lg text-primary font-semibold">{weatherMetrics.precipitation !== null ? `${weatherMetrics.precipitation} mm` : '--'}</p>
           </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter-grid mt-stack-lg">
-          {prev ? (
-            <a href={`/trips/${prev.data.trip}/${prev.data.date}/`} class="group relative h-48 overflow-hidden rounded-xl border border-outline-variant transition-all hover:shadow-lg">
+          {prevDate ? (
+            <a href={`/trips/${trip}/${prevDate}/`} class="group relative h-48 overflow-hidden rounded-xl border border-outline-variant transition-all hover:shadow-lg">
               <div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent"></div>
               <div class="absolute bottom-4 left-6">
                 <p class="font-label-sm text-on-primary-container/80 uppercase tracking-widest mb-1">Previous</p>
-                <h4 class="font-headline-md text-on-primary">{prev.data.title}</h4>
+                <h4 class="font-headline-md text-on-primary">{prevDate.slice(0,4)}-{prevDate.slice(4,6)}-{prevDate.slice(6,8)}</h4>
               </div>
             </a>
           ) : (
             <div></div>
           )}
-          {next ? (
-            <a href={`/trips/${next.data.trip}/${next.data.date}/`} class="group relative h-48 overflow-hidden rounded-xl border border-outline-variant transition-all hover:shadow-lg">
+          {nextDate ? (
+            <a href={`/trips/${trip}/${nextDate}/`} class="group relative h-48 overflow-hidden rounded-xl border border-outline-variant transition-all hover:shadow-lg">
               <div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent"></div>
               <div class="absolute bottom-4 left-6">
                 <p class="font-label-sm text-on-primary-container/80 uppercase tracking-widest mb-1">Next</p>
-                <h4 class="font-headline-md text-on-primary">{next.data.title}</h4>
+                <h4 class="font-headline-md text-on-primary">{nextDate.slice(0,4)}-{nextDate.slice(4,6)}-{nextDate.slice(6,8)}</h4>
               </div>
             </a>
           ) : (
