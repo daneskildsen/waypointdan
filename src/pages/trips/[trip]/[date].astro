@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { getCollection, render } from 'astro:content';
+import fs from 'node:fs';
 
 export async function getStaticPaths() {
   const entries = await getCollection('diary');
@@ -29,6 +30,26 @@ const prev = sorted[currentIndex - 1] ?? null;
 const next = sorted[currentIndex + 1] ?? null;
 
 const tripTag = entry.data.trip.replace(/(\d+)$/, ' $1').replace(/([a-z])([A-Z])/g, '$1 $2');
+
+const timelinePath = `/home/daneskildsen/projects/waypointdan/data/timeline/daily/timeline-${date}.json`;
+let coords = [];
+try {
+  const raw = fs.readFileSync(timelinePath, 'utf-8');
+  const data = JSON.parse(raw);
+  const segments = data.semanticSegments ?? [];
+  for (const seg of segments) {
+    const path = seg.timelinePath ?? [];
+    for (const pt of path) {
+      const p = pt.point ?? '';
+      const match = p.match(/([\d.-]+)°\s*,\s*([\d.-]+)°/);
+      if (match) {
+        coords.push([parseFloat(match[1]), parseFloat(match[2])]);
+      }
+    }
+  }
+} catch {
+  // timeline file not found or parse error — coords stays empty
+}
 ---
 
 <BaseLayout>
@@ -56,12 +77,7 @@ const tripTag = entry.data.trip.replace(/(\d+)$/, ' $1').replace(/([a-z])([A-Z])
   </header>
 
   <main class="pt-16 min-h-screen pb-24">
-    <section class="relative w-full h-[400px] bg-surface-variant overflow-hidden map-inset">
-      <div class="absolute inset-0 grayscale opacity-40 mix-blend-multiply" style="background-image: url('https://placehold.co/1440x400/e8eff1/002045?text=Map'); background-size: cover; background-position: center;"></div>
-      <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div class="text-primary/20 font-headline-lg text-[120px] select-none uppercase tracking-tighter opacity-10">{location_name}</div>
-      </div>
-    </section>
+    <section class="relative w-full h-[400px] bg-surface-variant overflow-hidden" id="map" style="height: 400px; width: 100%;"></section>
 
     <section class="relative px-margin-page -mt-[20px] z-10">
       <div class="max-w-[1120px] mx-auto bg-white rounded-xl shadow-sm border border-outline-variant p-10 md:p-16">
@@ -167,6 +183,33 @@ const tripTag = entry.data.trip.replace(/(\d+)$/, ' $1').replace(/([a-z])([A-Z])
   }
 </script>
 
+<script define:vars={{ coords }}>
+  document.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('map');
+    if (typeof L !== 'undefined' && container && coords.length > 0) {
+      const map = L.map('map', {
+        zoomControl: true,
+        attributionControl: true,
+      });
+
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>, &copy; CARTO',
+        subdomains: 'abcd',
+        maxZoom: 20,
+      }).addTo(map);
+
+      const polyline = L.polyline(coords, {
+        color: '#002045',
+        weight: 4,
+        opacity: 0.8,
+        smoothFactor: 1,
+      }).addTo(map);
+
+      map.fitBounds(polyline.getBounds(), { padding: [40, 40] });
+    }
+  });
+</script>
+
 <style is:global>
   .prose {
     color: var(--color-on-background);
@@ -205,4 +248,10 @@ const tripTag = entry.data.trip.replace(/(\d+)$/, ' $1').replace(/([a-z])([A-Z])
     margin-top: 2.5em;
     margin-bottom: 2.5em;
   }
+
+  #map {
+    z-index: 1;
+  }
+  #map .leaflet-control-attribution { font-size: 10px; color: var(--color-on-surface-variant); }
+  #map .leaflet-control-zoom a { background: var(--color-surface-container-low); color: var(--color-primary); border-color: var(--color-outline-variant); }
 </style>
