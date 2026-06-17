@@ -1,62 +1,27 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { getCollection } from 'astro:content';
-
-const entries = await getCollection('diary');
-
-const trips = [...new Set(entries.map((e) => e.data.trip))].map((trip) => {
-  const tripEntries = entries.filter((e) => e.data.trip === trip).sort(
-    (a, b) => b.data.date.localeCompare(a.data.date),
-  );
-  return { trip, entries: tripEntries };
-});
 ---
 
 <BaseLayout>
   <main class="min-h-screen pb-24">
     <section class="px-margin-page pt-20">
       <div class="max-w-[1120px] mx-auto">
-        <h1 class="font-display-lg text-display-lg text-primary mb-2">Travel Diary</h1>
-        <p class="font-body-lg text-on-surface-variant mb-12">Browse trips and journal entries.</p>
-
-        {trips.length === 0 && (
-          <p class="font-body-lg text-on-surface-variant">No entries yet.</p>
-        )}
+        <h1 class="font-display-lg text-display-lg text-primary mb-2">Waypoint Dan: Dan's personal Travel Diary</h1>
+        <p class="font-body-lg text-on-surface-variant mb-12">Entries for April 21 to June 13, 2026</p>
 
         <div class="grid gap-8">
-          {trips.map(({ trip, entries: tripEntries }) => (
-            <section class="bg-white rounded-xl shadow-sm border border-outline-variant p-8">
-              <h2 class="font-headline-lg text-headline-lg text-primary mb-1 capitalize">{trip.replace(/(\d+)$/, ' $1').replace(/([a-z])([A-Z])/g, '$1 $2')}</h2>
-              <p class="font-label-sm text-on-surface-variant uppercase tracking-widest mb-6">{tripEntries.length} {tripEntries.length === 1 ? 'entry' : 'entries'}</p>
-
-              <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {tripEntries.map((entry) => {
-                  const dt = entry.data.date;
-                  const y = dt.slice(0, 4);
-                  const m = dt.slice(4, 6);
-                  const d = dt.slice(6, 8);
-                  return (
-                    <a
-                      href={`/trips/${entry.data.trip}/${entry.data.date}/`}
-                      class="group block rounded-xl border border-outline-variant bg-surface-container-low p-5 transition-all hover:shadow-md hover:border-primary/30"
-                    >
-                      <h3 class="font-headline-md text-headline-md text-primary group-hover:text-primary-fixed-dim transition-colors">
-                        {entry.data.title}
-                      </h3>
-                      <p class="font-label-sm text-on-surface-variant mt-2">
-                        {y}-{m}-{d} &bull; {entry.data.location_name}
-                      </p>
-                      {entry.data.weather_temp && (
-                        <p class="font-label-sm text-on-surface-variant mt-1">
-                          {entry.data.weather_temp}&deg;C
-                        </p>
-                      )}
-                    </a>
-                  );
-                })}
+          <a
+            href="/trips/brisbane2026/20260421/"
+            class="group block bg-white rounded-xl shadow-sm border border-outline-variant p-8 transition-all hover:shadow-lg hover:border-primary/30"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="font-headline-lg text-headline-lg text-primary mb-1 capitalize">Brisbane 2026</h2>
+                <p class="font-label-sm text-on-surface-variant uppercase tracking-widest">Entries for April 21 to June 13, 2026</p>
               </div>
-            </section>
-          ))}
+              <span class="text-3xl text-primary group-hover:translate-x-1 transition-transform">&rarr;</span>
+            </div>
+          </a>
         </div>
       </div>
     </section>

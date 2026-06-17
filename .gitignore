@@ -26,3 +26,4 @@ pnpm-debug.log*
 # CRITICAL: Lock down your private personal data directories
 data/
 scripts/
+public/images/brisbane2026/

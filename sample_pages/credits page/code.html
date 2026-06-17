@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Waypoint Dan | Journey Credits</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;600;700&amp;family=Inter:wght@400;500&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary": "#ffffff",
+                    "on-background": "#161d1f",
+                    "surface": "#f4fafd",
+                    "surface-container-low": "#eef5f7",
+                    "primary-fixed-dim": "#adc7f7",
+                    "inverse-primary": "#adc7f7",
+                    "primary-fixed": "#d6e3ff",
+                    "secondary-fixed": "#e3e2df",
+                    "on-tertiary-fixed": "#1c1c16",
+                    "outline-variant": "#c4c6cf",
+                    "surface-container": "#e8eff1",
+                    "inverse-on-surface": "#ebf2f4",
+                    "on-secondary-fixed-variant": "#464744",
+                    "on-tertiary-fixed-variant": "#484740",
+                    "on-surface": "#161d1f",
+                    "surface-container-high": "#e2e9ec",
+                    "secondary-container": "#e0e0dc",
+                    "outline": "#74777f",
+                    "tertiary": "#22211b",
+                    "on-surface-variant": "#43474e",
+                    "on-error-container": "#93000a",
+                    "surface-variant": "#dde4e6",
+                    "error-container": "#ffdad6",
+                    "on-secondary-container": "#626360",
+                    "error": "#ba1a1a",
+                    "primary": "#002045",
+                    "on-primary-fixed-variant": "#2d476f",
+                    "tertiary-fixed": "#e6e2d9",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-container": "#1a365d",
+                    "surface-bright": "#f4fafd",
+                    "on-secondary-fixed": "#1b1c1a",
+                    "surface-container-highest": "#dde4e6",
+                    "secondary": "#5e5f5c",
+                    "on-tertiary-container": "#a19f97",
+                    "tertiary-container": "#373630",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-container": "#86a0cd",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed-dim": "#cac6be",
+                    "inverse-surface": "#2b3234",
+                    "on-primary-fixed": "#001b3c",
+                    "on-primary": "#ffffff",
+                    "secondary-fixed-dim": "#c7c7c3",
+                    "surface-dim": "#d4dbdd",
+                    "background": "#f4fafd",
+                    "surface-tint": "#455f88"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "stack-lg": "2.5rem",
+                    "stack-md": "1rem",
+                    "stack-sm": "0.5rem",
+                    "gutter-grid": "1.5rem",
+                    "margin-page": "2rem"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Libre Caslon Text"],
+                    "headline-lg": ["Libre Caslon Text"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-sm": ["JetBrains Mono"],
+                    "headline-md": ["Libre Caslon Text"],
+                    "display-lg": ["Libre Caslon Text"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        @keyframes scrollCredits {
+            0% { transform: translateY(100vh); }
+            100% { transform: translateY(-120%); }
+        }
+
+        .credits-container {
+            animation: scrollCredits 40s linear forwards;
+        }
+
+        .map-overlay {
+            background: radial-gradient(circle at center, transparent 0%, #161d1f 85%);
+        }
+
+        .flight-path {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: dash 8s ease-in-out forwards;
+        }
+
+        @keyframes dash {
+            to { stroke-dashoffset: 0; }
+        }
+
+        .glow-point {
+            filter: drop-shadow(0 0 8px #adc7f7);
+        }
+    </style>
+</head>
+<body class="bg-on-background text-primary-fixed overflow-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top Navigation Bar (The Shell) -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-4 md:px-margin-page h-16 bg-on-background/10 backdrop-blur-sm border-b border-outline-variant/10">
+<div class="flex items-center gap-4">
+<button class="text-primary-fixed hover:opacity-80 transition-opacity active:scale-95 duration-200">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md text-primary-fixed-dim">Waypoint Dan</h1>
+</div>
+</header>
+<!-- Cinematic Background Canvas -->
+<div class="fixed inset-0 z-0">
+<!-- The Map Background -->
+<div class="absolute inset-0 w-full h-full opacity-40 mix-blend-luminosity grayscale contrast-125" data-alt="A vintage-style world map texture in deep charcoal and navy blue tones. The map features subtle cartographic details with a paper-like grain. Atmospheric low-key lighting creates a mysterious and sophisticated travel theme. The aesthetic is dark, professional, and evocative of high-end travel journals." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAEJMmCLZcTBZSavlOeLnma6AMX8hHGXwyW6Lrq3jLh7LAQzhKxPA0Dgho3XPwuqBSnGiBD8X90yktKCDvucKvnKFKcWN9MnN9f_PmTowktAySWeXIwgzCzoRXk_C3sqvC0Q01w84EfkbtgndxVqxKOjvaWt1okoDvBiM8R5WpYJABgQuy40I1oNmT9cBVdZNX4FKitmeV2MuNJIf8P9hNuLglXYeRAYLh7KwI3OJy9vUXb_wGTHR58dvwKAlp03xvrlSQRkcKP1g0'); background-size: cover; background-position: 95% 80%;">
+</div>
+<!-- Map Visualization Overlay (SVG Flight Lines) -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none" preserveaspectratio="xMidYMid slice" viewbox="0 0 1000 500">
+<!-- Copenhagen to Singapore -->
+<path class="flight-path opacity-30" d="M480,120 Q600,200 720,380" fill="none" stroke="#adc7f7" stroke-width="1.5"></path>
+<!-- Singapore to Brisbane -->
+<path class="flight-path opacity-30" d="M720,380 Q850,400 920,440" fill="none" stroke="#adc7f7" stroke-width="1.5"></path>
+<!-- Glow Points -->
+<circle class="glow-point" cx="480" cy="120" fill="#adc7f7" r="2"></circle> <!-- Copenhagen -->
+<circle class="glow-point" cx="720" cy="380" fill="#adc7f7" r="2"></circle> <!-- Singapore -->
+<circle class="glow-point" cx="920" cy="440" fill="#adc7f7" r="2"></circle> <!-- Brisbane -->
+</svg>
+<!-- Vignette & Shadowing -->
+<div class="absolute inset-0 map-overlay"></div>
+</div>
+<!-- Scrolling Credits Content -->
+<main class="relative z-10 w-full h-screen overflow-hidden flex flex-col items-center">
+<div class="credits-container max-w-2xl w-full text-center space-y-16 px-margin-page">
+<!-- Opening Title -->
+<div class="space-y-4 pt-20">
+
+<h2 class="font-display-lg text-display-lg text-primary-fixed drop-shadow-2xl">Waypoint Dan</h2>
+<div class="w-12 h-px bg-primary-fixed-dim mx-auto mt-8"></div>
+</div>
+<!-- Credits List -->
+<div class="space-y-24"><section class="space-y-2"><p class="font-label-sm text-label-sm text-on-primary-container uppercase tracking-widest">Logger</p><p class="font-headline-lg text-headline-lg text-primary-fixed-dim">Dan Eskildsen</p></section><section class="space-y-2"><p class="font-label-sm text-label-sm text-on-primary-container uppercase tracking-widest">Photographer</p><p class="font-headline-lg text-headline-lg text-primary-fixed-dim">Dan Eskildsen</p></section><section class="space-y-2"><p class="font-label-sm text-label-sm text-on-primary-container uppercase tracking-widest">Mapper</p><p class="font-headline-lg text-headline-lg text-primary-fixed-dim">Google maps timeline</p></section><section class="space-y-2"><p class="font-label-sm text-label-sm text-on-primary-container uppercase tracking-widest">Layout generation</p><p class="font-headline-lg text-headline-lg text-primary-fixed-dim">Google stitch</p></section><section class="space-y-2"><p class="font-label-sm text-label-sm text-on-primary-container uppercase tracking-widest">Website planning</p><p class="font-headline-lg text-headline-lg text-primary-fixed-dim">Google Gemini</p></section><section class="space-y-2"><p class="font-label-sm text-label-sm text-on-primary-container uppercase tracking-widest">Coding</p><p class="font-headline-lg text-headline-lg text-primary-fixed-dim">Open code</p></section><section class="space-y-2"><p class="font-label-sm text-label-sm text-on-primary-container uppercase tracking-widest">AI coding agent</p><p class="font-headline-lg text-headline-lg text-primary-fixed-dim">Big Pickle</p></section><section class="space-y-2"><p class="font-label-sm text-label-sm text-on-primary-container uppercase tracking-widest">Repository hosting</p><p class="font-headline-lg text-headline-lg text-primary-fixed-dim">Github</p></section><section class="space-y-2"><p class="font-label-sm text-label-sm text-on-primary-container uppercase tracking-widest">Web hosting</p><p class="font-headline-lg text-headline-lg text-primary-fixed-dim">Cloudflare</p></section></div></div>
+</div>
+</main>
+<!-- Minimal Controls -->
+<div class="fixed bottom-margin-page right-margin-page z-50 flex gap-4">
+<button class="w-12 h-12 rounded-full border border-outline-variant/30 flex items-center justify-center bg-on-background/50 backdrop-blur-md text-primary-fixed-dim hover:bg-primary-container/20 transition-all active:scale-95" id="togglePlay">
+<span class="material-symbols-outlined" id="playIcon">pause</span>
+</button>
+<button class="w-12 h-12 rounded-full border border-outline-variant/30 flex items-center justify-center bg-on-background/50 backdrop-blur-md text-primary-fixed-dim hover:bg-primary-container/20 transition-all active:scale-95" id="replay">
+<span class="material-symbols-outlined">replay</span>
+</button>
+</div>
+<script>
+        const credits = document.querySelector('.credits-container');
+        const playBtn = document.getElementById('togglePlay');
+        const playIcon = document.getElementById('playIcon');
+        const replayBtn = document.getElementById('replay');
+
+        let isPaused = false;
+
+        playBtn.addEventListener('click', () => {
+            isPaused = !isPaused;
+            credits.style.animationPlayState = isPaused ? 'paused' : 'running';
+            playIcon.textContent = isPaused ? 'play_arrow' : 'pause';
+        });
+
+        replayBtn.addEventListener('click', () => {
+            credits.style.animation = 'none';
+            credits.offsetHeight; // trigger reflow
+            credits.style.animation = 'scrollCredits 40s linear forwards';
+            isPaused = false;
+            playIcon.textContent = 'pause';
+        });
+
+        // Add subtle parallax effect on mouse move for the map
+        document.addEventListener('mousemove', (e) => {
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            
+            const moveX = (x - 0.5) * 15;
+            const moveY = (y - 0.5) * 15;
+            
+            document.querySelector('.fixed.inset-0.z-0').style.transform = `scale(1.05) translate(${moveX}px, ${moveY}px)`;
+        });
+    </script>
+</body></html>

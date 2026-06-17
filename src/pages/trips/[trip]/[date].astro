@@ -57,6 +57,7 @@ if (entry) {
 const timelinePath = path.join(DAILY_DIR, `timeline-${date}.json`);
 let coords = [];
 let weatherMetrics = { maxTemp: null, minTemp: null, precipitation: null, weatherCode: null };
+let photos = [];
 try {
   const raw = fs.readFileSync(timelinePath, 'utf-8');
   const data = JSON.parse(raw);
@@ -78,6 +79,7 @@ try {
     precipitation: wm.precipitation ?? null,
     weatherCode: wm.weatherCode ?? null,
   };
+  photos = data.photos ?? [];
 } catch {
   // timeline file not found or parse error — coords stays empty
 }
@@ -110,6 +112,55 @@ try {
 } catch {
   // logseq file read or parse error — hasLogseq stays false
 }
+
+// --- Calendar data ---
+const TRIP_START_NUM = 20260421;
+const TRIP_END_NUM = 20260613;
+const weekdays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+function getMondayOffset(year, month) {
+  const dow = new Date(year, month - 1, 1).getDay();
+  return dow === 0 ? 6 : dow - 1;
+}
+
+function daysInMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
+function dateNum(year, month, day) {
+  return year * 10000 + month * 100 + day;
+}
+
+const calendarMonths = [
+  { name: 'April', year: 2026, month: 4 },
+  { name: 'May', year: 2026, month: 5 },
+  { name: 'June', year: 2026, month: 6 },
+].map(m => {
+  const totalDays = daysInMonth(m.year, m.month);
+  const offset = getMondayOffset(m.year, m.month);
+  const prevM = m.month === 1 ? 12 : m.month - 1;
+  const prevY = m.month === 1 ? m.year - 1 : m.year;
+  const prevTotal = daysInMonth(prevY, prevM);
+  const nextM = m.month === 12 ? 1 : m.month + 1;
+  const nextY = m.month === 12 ? m.year + 1 : m.year;
+  const days = [];
+
+  for (let i = 0; i < offset; i++) {
+    days.push({ day: prevTotal - offset + 1 + i, muted: true, active: false });
+  }
+  for (let d = 1; d <= totalDays; d++) {
+    const num = dateNum(m.year, m.month, d);
+    const inRange = num >= TRIP_START_NUM && num <= TRIP_END_NUM;
+    days.push({ day: d, muted: !inRange, active: num === parseInt(date), dateNum: num, inRange });
+  }
+  const remaining = (7 - (days.length % 7)) % 7;
+  for (let i = 1; i <= remaining; i++) {
+    days.push({ day: i, muted: true, active: false });
+  }
+
+  return { ...m, days };
+});
+const currentDateNum = parseInt(date);
 ---
 
 <BaseLayout>
@@ -130,13 +181,34 @@ try {
       <button class="material-symbols-outlined p-2 hover:bg-surface-container-low transition-colors rounded-full">light_mode</button>
       <div class="flex items-center gap-2 text-primary font-bold">
         <a href={prevDate ? `/trips/${trip}/${prevDate}/` : '#'} class="material-symbols-outlined cursor-pointer hover:bg-surface-container-low rounded-full p-1 transition-colors" aria-label="Previous entry">chevron_left</a>
-        <a href="/trips/" class="material-symbols-outlined cursor-pointer hover:bg-surface-container-low rounded-full p-1 transition-colors" aria-label="All trips">event</a>
+        <button id="cal-toggle" class="material-symbols-outlined cursor-pointer hover:bg-surface-container-low rounded-full p-1 transition-colors" aria-label="Toggle calendar" aria-expanded="false">event</button>
         <a href={nextDate ? `/trips/${trip}/${nextDate}/` : '#'} class="material-symbols-outlined cursor-pointer hover:bg-surface-container-low rounded-full p-1 transition-colors" aria-label="Next entry">chevron_right</a>
       </div>
     </div>
   </header>
 
   <main class="pt-16 min-h-screen pb-24">
+    <section id="cal-section" class="hidden w-full bg-surface-container-low border-b border-outline-variant px-margin-page overflow-x-auto hide-scrollbar py-4">
+      <div class="max-w-[1120px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+        {calendarMonths.map(month => (
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="font-label-sm uppercase tracking-widest text-primary font-semibold">{month.name} {month.year}</h3>
+            </div>
+            <div class="grid grid-cols-7 gap-1 mb-1 text-center text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
+              {weekdays.map(d => <span class="py-0.5">{d}</span>)}
+            </div>
+            <div class="calendar-grid gap-0.5">
+              {month.days.map(d => d.inRange ? (
+                <a href={`/trips/${trip}/${d.dateNum}/`} class={`calendar-day${d.active ? ' active' : ''} no-underline text-on-surface`}>{d.day}</a>
+              ) : (
+                <span class="calendar-day muted cursor-default">{d.day}</span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
     <section class="relative w-full h-[400px] bg-surface-variant overflow-hidden" id="map" style="height: 400px; width: 100%;"></section>
 
     <section class="relative px-margin-page -mt-[20px] z-10">
@@ -165,28 +237,47 @@ try {
       </div>
     </section>
 
-    {images.length > 0 && (
-      <section class="mt-stack-lg px-margin-page">
-        <div class="flex items-center justify-between mb-6 max-w-[1120px] mx-auto">
-          <h2 class="font-headline-md text-headline-md text-primary">Trip Gallery</h2>
-          <div class="flex gap-2">
-            <button class="material-symbols-outlined p-2 border border-outline-variant rounded-full hover:bg-surface-container transition-colors" id="prevBtn">arrow_back</button>
-            <button class="material-symbols-outlined p-2 border border-outline-variant rounded-full hover:bg-surface-container transition-colors" id="nextBtn">arrow_forward</button>
+    {photos.length > 0 && (
+      <section class="mt-stack-lg px-margin-page" id="gallery-section">
+        <div class="max-w-[1120px] mx-auto">
+          <h2 class="font-headline-md text-headline-md text-primary mb-6">Gallery</h2>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3" id="gallery-grid">
+            {photos.map((photo, i) => (
+              <button
+                class="group aspect-square overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low focus:outline-none focus:ring-2 focus:ring-primary"
+                data-index={i}
+                data-src={photo.url}
+                aria-label="Open photo"
+              >
+                <img
+                  class="w-full h-full object-cover transition-all duration-300 group-hover:scale-105 group-hover:opacity-90"
+                  src={photo.url}
+                  alt=""
+                  loading="lazy"
+                />
+              </button>
+            ))}
           </div>
-        </div>
-        <div class="flex gap-4 overflow-x-auto hide-scrollbar snap-x snap-mandatory pb-4 max-w-[1120px] mx-auto" id="carousel">
-          {images.map((src) => (
-            <div class="flex-none w-80 md:w-96 snap-start">
-              <img class="w-full aspect-square object-cover rounded-xl border border-outline-variant" src={src} alt="Trip photo" loading="lazy" />
-            </div>
-          ))}
         </div>
       </section>
     )}
 
+    <div id="lightbox" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/90" role="dialog" aria-modal="true" aria-label="Photo lightbox">
+      <button id="lb-close" class="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-black/40 flex items-center justify-center text-white hover:bg-black/60 transition-colors" aria-label="Close lightbox">
+        <span class="material-symbols-outlined text-2xl">close</span>
+      </button>
+      <button id="lb-prev" class="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-black/40 flex items-center justify-center text-white hover:bg-black/60 transition-colors" aria-label="Previous photo">
+        <span class="material-symbols-outlined text-3xl">chevron_left</span>
+      </button>
+      <button id="lb-next" class="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-black/40 flex items-center justify-center text-white hover:bg-black/60 transition-colors" aria-label="Next photo">
+        <span class="material-symbols-outlined text-3xl">chevron_right</span>
+      </button>
+      <img id="lb-img" class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl" alt="" />
+    </div>
+
     <section class="mt-stack-lg px-margin-page pb-12">
       <div class="max-w-[1120px] mx-auto">
-        <h2 class="font-headline-md text-headline-md text-primary mb-6">Daily Weather</h2>
+        <h2 class="font-headline-md text-headline-md text-primary mb-6">Weather report</h2>
         <div class="bg-surface-container-low rounded-xl border border-outline-variant p-6 flex flex-wrap items-center gap-8 md:gap-16">
           <div class="flex items-center gap-4">
             <span class="material-symbols-outlined text-4xl text-primary">{w.icon}</span>
@@ -239,19 +330,68 @@ try {
 </BaseLayout>
 
 <script>
-  const carousel = document.getElementById('carousel');
-  const nextBtn = document.getElementById('nextBtn');
-  const prevBtn = document.getElementById('prevBtn');
+  const thumbs = document.querySelectorAll('#gallery-grid button');
+  const lb = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lb-img');
+  const lbClose = document.getElementById('lb-close');
+  const lbPrev = document.getElementById('lb-prev');
+  const lbNext = document.getElementById('lb-next');
+  const sources = Array.from(thumbs).map((btn) => btn.dataset.src);
+  let current = -1;
 
-  if (carousel && nextBtn) {
-    nextBtn.addEventListener('click', () => {
-      carousel.scrollBy({ left: 350, behavior: 'smooth' });
-    });
+  function openLightbox(index) {
+    current = index;
+    lbImg.src = sources[current];
+    lb.classList.remove('hidden');
+    lb.classList.add('flex');
+    document.body.style.overflow = 'hidden';
   }
 
-  if (carousel && prevBtn) {
-    prevBtn.addEventListener('click', () => {
-      carousel.scrollBy({ left: -350, behavior: 'smooth' });
+  function closeLightbox() {
+    lb.classList.add('hidden');
+    lb.classList.remove('flex');
+    document.body.style.overflow = '';
+    current = -1;
+  }
+
+  function prevPhoto() {
+    if (sources.length === 0) return;
+    current = (current - 1 + sources.length) % sources.length;
+    lbImg.src = sources[current];
+  }
+
+  function nextPhoto() {
+    if (sources.length === 0) return;
+    current = (current + 1) % sources.length;
+    lbImg.src = sources[current];
+  }
+
+  thumbs.forEach((btn) => {
+    btn.addEventListener('click', () => openLightbox(parseInt(btn.dataset.index)));
+  });
+
+  lbClose.addEventListener('click', closeLightbox);
+  lbPrev.addEventListener('click', prevPhoto);
+  lbNext.addEventListener('click', nextPhoto);
+
+  lb.addEventListener('click', (e) => {
+    if (e.target === lb) closeLightbox();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (!lb.classList.contains('hidden')) {
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowLeft') prevPhoto();
+      if (e.key === 'ArrowRight') nextPhoto();
+    }
+  });
+
+  const calToggle = document.getElementById('cal-toggle');
+  const calSection = document.getElementById('cal-section');
+  if (calToggle && calSection) {
+    calToggle.addEventListener('click', () => {
+      const isHidden = calSection.classList.toggle('hidden');
+      calToggle.setAttribute('aria-expanded', !isHidden);
     });
   }
 </script>
