@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
-import { getCollection, render } from 'astro:content';
+import { getCollection } from 'astro:content';
 import { Marked } from 'marked';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -40,18 +40,11 @@ const tripTag = trip.replace(/(\d+)$/, ' $1').replace(/([a-z])([A-Z])/g, '$1 $2'
 
 const allEntries = await getCollection('diary');
 const entry = allEntries.find((e) => e.data.trip === trip && e.data.date === date);
-let Content = null;
 let title = formattedDate;
 let location_name = '';
-let weather_temp = null;
-let images = [];
 if (entry) {
-  const result = await render(entry);
-  Content = result.Content;
   title = entry.data.title;
   location_name = entry.data.location_name;
-  weather_temp = entry.data.weather_temp;
-  images = entry.data.images ?? [];
 }
 
 const timelinePath = path.join(DAILY_DIR, `timeline-${date}.json`);

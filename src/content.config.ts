@@ -9,7 +9,7 @@ const diary = defineCollection({
     trip: z.string(),
     location_name: z.string(),
     weather_temp: z.number(),
-    images: z.array(z.string()),
+    images: z.array(z.string()).optional(),
   }),
 });
 
